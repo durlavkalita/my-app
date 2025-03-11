@@ -15,6 +15,18 @@
     "experiments": {
       "typedRoutes": true
     },
-    "scheme": "myapp"
+    "scheme": "myapp",
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "0bf59107-e5aa-4686-a48d-1264b81a6e1c"
+      }
+    },
+    "owner": "durlavk",
+    "android": {
+      "package": "com.durlavk.myapp"
+    }
   }
 }
