@@ -1,6 +1,7 @@
 import {
   addDoc,
   collection,
+  deleteDoc,
   doc,
   getDocs,
   query,
@@ -45,6 +46,11 @@ export const updateTaskCompletion = async (
   await updateDoc(taskRef, { completed });
 };
 
+export const deleteTask = async (taskId: string) => {
+  const taskRef = doc(db, "tasks", taskId);
+  await deleteDoc(taskRef);
+};
+
 export const getFinances = async () => {
   let queriedData: Finance[] = [];
   const q = query(collection(db, "finances"));
@@ -72,4 +78,9 @@ export const postFinance = async (
     console.error("Error adding finance data:", error);
     return null;
   }
+};
+
+export const deleteFinance = async (financeId: string) => {
+  const financeRef = doc(db, "finances", financeId);
+  await deleteDoc(financeRef);
 };

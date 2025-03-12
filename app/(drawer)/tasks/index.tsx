@@ -1,4 +1,4 @@
-import { getTasks, updateTaskCompletion } from "@/services/queries";
+import { deleteTask, getTasks, updateTaskCompletion } from "@/services/queries";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useState } from "react";
 import {
@@ -24,29 +24,49 @@ const CircularProgress = ({ progress }: { progress: number }) => {
 export default function TasksScreen() {
   const queryClient = useQueryClient();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [selectedFunction, setSelectedFunction] = useState("update");
   const [modalVisible, setModalVisible] = useState(false);
+  const [filter, setFilter] = useState<"all" | "low" | "medium" | "high">(
+    "medium"
+  );
 
-  const query = useQuery({ queryKey: ["tasks"], queryFn: getTasks });
+  const {
+    data: tasks,
+    isLoading,
+    error,
+  } = useQuery({ queryKey: ["tasks"], queryFn: getTasks });
 
-  const totalTasks = query.data ? query.data.length : 0;
-  const completedTasks = query.data
-    ? query.data.filter((task) => task.completed).length
+  const totalTasks = tasks ? tasks.length : 0;
+  const completedTasks = tasks
+    ? tasks.filter((task) => task.completed).length
     : 0;
   const progress =
     totalTasks && totalTasks > 0 ? completedTasks / totalTasks : 0;
-  const sortedTasks = query.data
-    ? [...query.data].sort((a, b) => Number(a.completed) - Number(b.completed))
-    : [];
 
+  const filteredTasks =
+    tasks?.filter((item) =>
+      filter == "all" ? true : item.priority == filter
+    ) || [];
+  const sortedTasks = filteredTasks
+    ? [...filteredTasks].sort(
+        (a, b) => Number(a.completed) - Number(b.completed)
+      )
+    : [];
   const mutation = useMutation({
-    mutationFn: (taskId: string) => updateTaskCompletion(taskId, true),
+    mutationFn: async (taskId: string) => {
+      if (selectedFunction == "update") {
+        return updateTaskCompletion(taskId, true);
+      } else if (selectedFunction === "delete") {
+        return deleteTask(taskId);
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] }); // Refetch tasks after update
       setSelectedTask(null); // Close modal
     },
   });
 
-  if (query.isPending) {
+  if (isLoading) {
     return (
       <View className="flex items-center justify-center">
         <ActivityIndicator size={"large"} />
@@ -54,7 +74,7 @@ export default function TasksScreen() {
     );
   }
 
-  if (query.isError) {
+  if (error) {
     return (
       <View className="flex items-center">
         <Text className="text-lg font-medium">Sorry, No Task Found</Text>
@@ -65,57 +85,64 @@ export default function TasksScreen() {
   return (
     <View className="flex-1 p-4 bg-white">
       {/* Welcome Message */}
-      <Text className="text-2xl font-bold">Hello, Durlav! 👋</Text>
+      <Text className="text-2xl font-bold">Hello, Durlav 👋</Text>
       <Text className="text-gray-500">
         Stay focused and crush your goals today! 🚀
       </Text>
-      {query.data!.length > 0 ? (
-        <View>
-          {/* Progress Banner */}
-          <View className="flex-row items-center bg-gray-100 p-4 mt-4 rounded-2xl">
-            {/* Circular Progress */}
-            <CircularProgress progress={progress} />
+      {/* Progress Banner */}
+      <View className="flex-row items-center bg-gray-100 p-4 mt-4 rounded-2xl">
+        {/* Circular Progress */}
+        <CircularProgress progress={progress} />
 
-            {/* Task Completion Info */}
-            <View className="ml-4">
-              <Text className="text-lg font-semibold">
-                {totalTasks - completedTasks} out of {totalTasks} tasks left
-              </Text>
-              <Text className="text-gray-500">Keep up the good work!</Text>
-            </View>
-          </View>
-
-          {/* Priority Filters */}
-          <View className="flex-row space-x-2 my-4">
-            {["All", "High", "Medium", "Low"].map((tag) => (
-              <TouchableOpacity
-                key={tag}
-                className="bg-gray-200 px-3 py-1 rounded-full mx-1"
+        {/* Task Completion Info */}
+        <View className="ml-4">
+          <Text className="text-lg font-semibold">
+            {totalTasks - completedTasks} out of {totalTasks} tasks left
+          </Text>
+          <Text className="text-gray-500">Keep up the good work!</Text>
+        </View>
+      </View>
+      {/* Filter Buttons */}
+      <View className="flex-row justify-center my-4">
+        {["all", "low", "medium", "high"].map((type) => (
+          <TouchableOpacity
+            key={type}
+            onPress={() => setFilter(type as "all" | "low" | "medium" | "high")}
+            className={`px-4 py-2 mx-2 rounded-full ${
+              filter === type ? "bg-blue-500" : "bg-gray-300"
+            }`}
+          >
+            <Text className={filter === type ? "text-white" : "text-black"}>
+              {type.charAt(0).toUpperCase() + type.slice(1)}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      <View>
+        {/* Task List */}
+        <FlatList
+          data={sortedTasks}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <View className="p-4 bg-white rounded-lg mb-2 shadow flex-row justify-between items-center">
+              <Text
+                className={`font-semibold ${
+                  item.completed ? "text-gray-400 line-through" : "text-black"
+                }`}
               >
-                <Text className="text-gray-700">{tag}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+                {item.title}
+              </Text>
 
-          {/* Task List */}
-
-          <FlatList
-            data={sortedTasks}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <View className="p-4 bg-white rounded-lg mb-2 shadow flex-row justify-between items-center">
-                <Text
-                  className={`font-semibold ${
-                    item.completed ? "text-gray-400 line-through" : "text-black"
-                  }`}
-                >
-                  {item.title}
-                </Text>
-
+              <View className="flex-row items-center">
                 {item.completed ? (
                   <FontAwesome name="hourglass" size={24} color="green" />
                 ) : (
-                  <TouchableOpacity onPress={() => setSelectedTask(item)}>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setSelectedTask(item);
+                      setSelectedFunction("update");
+                    }}
+                  >
                     <FontAwesome
                       name="hourglass-half"
                       size={24}
@@ -123,13 +150,20 @@ export default function TasksScreen() {
                     />
                   </TouchableOpacity>
                 )}
+                <TouchableOpacity
+                  onPress={() => {
+                    setSelectedTask(item);
+                    setSelectedFunction("delete");
+                  }}
+                  className="ml-6"
+                >
+                  <FontAwesome name="trash" size={26} color="red" />
+                </TouchableOpacity>
               </View>
-            )}
-          />
-        </View>
-      ) : (
-        ""
-      )}
+            </View>
+          )}
+        />
+      </View>
 
       {/* Floating Action Button */}
       <TouchableOpacity
@@ -145,7 +179,9 @@ export default function TasksScreen() {
           <View className="flex-1 justify-center items-center bg-black/50">
             <View className="bg-white p-6 rounded-lg w-80">
               <Text className="text-lg font-semibold mb-4">
-                Mark task as completed?
+                {selectedFunction == "update"
+                  ? "Mark task as completed?"
+                  : "Delete this task?"}
               </Text>
               <Text className="text-gray-600 mb-4">{selectedTask.title}</Text>
 

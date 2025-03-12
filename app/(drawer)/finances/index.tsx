@@ -5,12 +5,16 @@ import {
   FlatList,
   Pressable,
   TouchableOpacity,
+  Modal,
 } from "react-native";
-import { useQuery } from "@tanstack/react-query";
-import { getFinances } from "@/services/queries";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { deleteFinance, getFinances } from "@/services/queries";
 import FinanceForm from "@/components/forms/FinanceForm";
+import FontAwesome from "@expo/vector-icons/FontAwesome";
 
 const FinanceScreen = () => {
+  const queryClient = useQueryClient();
+  const [selectedFinance, setSelectedFinance] = useState<Finance | null>(null);
   const {
     data: finances,
     isLoading,
@@ -35,6 +39,14 @@ const FinanceScreen = () => {
     finances?.filter((item) =>
       filter === "all" ? true : item.financeType === filter
     ) || [];
+
+  const mutation = useMutation({
+    mutationFn: async (financeId: string) => deleteFinance(financeId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["finances"] }); // Refetch tasks after update
+      setSelectedFinance(null); // Close modal
+    },
+  });
 
   if (isLoading) return <Text>Loading finances...</Text>;
   if (error) return <Text>Error loading finances</Text>;
@@ -79,20 +91,28 @@ const FinanceScreen = () => {
         data={filteredFinances}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <View className="p-4 bg-white rounded-lg mb-2 shadow-md">
-            <Text className="font-semibold">{item.description}</Text>
-            <Text
-              className={
-                item.financeType === "income"
-                  ? "text-green-500"
-                  : "text-red-500"
-              }
+          <View className="p-4 bg-white rounded-lg mb-2 shadow-md flex-row items-center justify-between">
+            <View className="">
+              <Text className="font-semibold">{item.description}</Text>
+              <Text
+                className={
+                  item.financeType === "income"
+                    ? "text-green-500"
+                    : "text-red-500"
+                }
+              >
+                ₹{item.amount}
+              </Text>
+              <Text className="text-gray-400 text-xs">
+                {new Date(item.date).toDateString()}
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => setSelectedFinance(item)}
+              className="ml-6"
             >
-              ₹{item.amount}
-            </Text>
-            <Text className="text-gray-400 text-xs">
-              {new Date(item.date).toDateString()}
-            </Text>
+              <FontAwesome name="trash" size={26} color="red" />
+            </TouchableOpacity>
           </View>
         )}
       />
@@ -104,6 +124,33 @@ const FinanceScreen = () => {
       >
         <Text className="text-white text-2xl">+</Text>
       </TouchableOpacity>
+
+      {/* Confirmation Modal */}
+      {selectedFinance && (
+        <Modal transparent visible={true} animationType="slide">
+          <View className="flex-1 justify-center items-center bg-black/50">
+            <View className="bg-white p-6 rounded-lg w-80">
+              <Text className="text-lg font-semibold mb-4">
+                Delete this data?
+              </Text>
+              <Text className="text-gray-600 mb-4">
+                {selectedFinance.amount} {selectedFinance.description}
+              </Text>
+
+              <View className="flex-row justify-between">
+                <TouchableOpacity onPress={() => setSelectedFinance(null)}>
+                  <Text className="text-red-500">Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => mutation.mutate(selectedFinance.id)}
+                >
+                  <Text className="text-green-500">Confirm</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
 
       <FinanceForm
         modalVisible={modalVisible}
