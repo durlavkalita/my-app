@@ -29,7 +29,6 @@ export default function TasksScreen() {
   const [filter, setFilter] = useState<"all" | "low" | "medium" | "high">(
     "medium"
   );
-
   const {
     data: tasks,
     isLoading,

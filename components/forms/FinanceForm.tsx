@@ -58,7 +58,7 @@ export default function Transaction({ modalVisible, setModalVisible }: Props) {
       const newFinance = {
         amount,
         description,
-        date: "20233",
+        date: new Date().toISOString(),
         financeType: transactionType,
         method: financeMethod,
       };

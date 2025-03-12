@@ -2,6 +2,7 @@ import { postTask } from "@/services/queries";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Modal } from "react-native";
+import DatePicker from "react-native-date-picker";
 
 type Props = {
   modalVisible: any;
@@ -18,13 +19,15 @@ export const TaskForm = ({ modalVisible, setModalVisible }: Props) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState(Priority.Medium);
+
+  const [date, setDate] = useState(new Date());
   const queryClient = useQueryClient();
   const onSubmit = () => {
     if (!title.trim()) return;
     const newTask = {
       title,
       description,
-      dueDate: "2025-02-25T12:00:00Z",
+      dueDate: date.toISOString(),
       priority,
       completed: false,
     };
@@ -46,7 +49,7 @@ export const TaskForm = ({ modalVisible, setModalVisible }: Props) => {
       className="p-4 bg-white flex-1"
     >
       <View className="flex-1 justify-center items-center bg-black/50">
-        <View className="bg-white p-6 rounded-lg w-80">
+        <View className="bg-white p-6 rounded-lg w-90">
           <Text className="text-xl font-semibold text-center mb-4">
             {"Add New Task"}
           </Text>
@@ -80,6 +83,13 @@ export const TaskForm = ({ modalVisible, setModalVisible }: Props) => {
                 </Text>
               </TouchableOpacity>
             ))}
+          </View>
+
+          <View className="my-2">
+            <Text className="font-semibold px-2 text-gray-500">
+              Select Due Date
+            </Text>
+            <DatePicker date={date} mode="date" onDateChange={setDate} />
           </View>
 
           <View className="flex-row justify-between items-center">
