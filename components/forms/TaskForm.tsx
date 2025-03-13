@@ -2,7 +2,7 @@ import { postTask } from "@/services/queries";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Modal } from "react-native";
-import DatePicker from "react-native-date-picker";
+import CalendarPicker from "../ui/CalendarPicker";
 
 type Props = {
   modalVisible: any;
@@ -19,15 +19,27 @@ export const TaskForm = ({ modalVisible, setModalVisible }: Props) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState(Priority.Medium);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
-  const [date, setDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const onSubmit = () => {
-    if (!title.trim()) return;
+    if (!title.trim()) {
+      setValidationError("title");
+      return;
+    }
+    if (!selectedDate) {
+      setValidationError("due date");
+      return;
+    }
+    if (!description.trim()) {
+      setDescription(title);
+    }
+
     const newTask = {
       title,
       description,
-      dueDate: date.toISOString(),
+      dueDate: selectedDate || "2025",
       priority,
       completed: false,
     };
@@ -85,12 +97,20 @@ export const TaskForm = ({ modalVisible, setModalVisible }: Props) => {
             ))}
           </View>
 
-          <View className="my-2">
-            <Text className="font-semibold px-2 text-gray-500">
-              Select Due Date
+          <View className="p-2 my-2">
+            <Text className="text-lg font-semibold">
+              Due Date: {selectedDate || "None"}
             </Text>
-            <DatePicker date={date} mode="date" onDateChange={setDate} />
+            <CalendarPicker onSelectDate={(date) => setSelectedDate(date)} />
           </View>
+
+          {validationError ? (
+            <Text className="text-red-500 font-light text-sm">
+              *Missing Information: {validationError}
+            </Text>
+          ) : (
+            ""
+          )}
 
           <View className="flex-row justify-between items-center">
             <TouchableOpacity

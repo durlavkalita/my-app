@@ -93,7 +93,6 @@ const FinanceScreen = () => {
         renderItem={({ item }) => (
           <View className="p-4 bg-white rounded-lg mb-2 shadow-md flex-row items-center justify-between">
             <View className="">
-              <Text className="font-semibold">{item.description}</Text>
               <Text
                 className={
                   item.financeType === "income"
@@ -103,6 +102,7 @@ const FinanceScreen = () => {
               >
                 ₹{item.amount}
               </Text>
+              <Text className="font-light text-base">{item.description}</Text>
               <Text className="text-gray-400 text-xs">
                 {new Date(item.date).toDateString()}
               </Text>

@@ -11,15 +11,8 @@ import {
 } from "react-native";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { TaskForm } from "@/components/forms/TaskForm";
-
-const CircularProgress = ({ progress }: { progress: number }) => {
-  const percentage = Math.round(progress * 100);
-  return (
-    <View className="w-16 h-16 border-4 border-green-500 rounded-full flex items-center justify-center">
-      <Text className="text-sm font-bold">{percentage}%</Text>
-    </View>
-  );
-};
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import CircularProgress from "@/components/ui/CircularProgress";
 
 export default function TasksScreen() {
   const queryClient = useQueryClient();
@@ -27,7 +20,7 @@ export default function TasksScreen() {
   const [selectedFunction, setSelectedFunction] = useState("update");
   const [modalVisible, setModalVisible] = useState(false);
   const [filter, setFilter] = useState<"all" | "low" | "medium" | "high">(
-    "medium"
+    "all"
   );
   const {
     data: tasks,
@@ -123,18 +116,35 @@ export default function TasksScreen() {
           data={sortedTasks}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <View className="p-4 bg-white rounded-lg mb-2 shadow flex-row justify-between items-center">
-              <Text
-                className={`font-semibold ${
-                  item.completed ? "text-gray-400 line-through" : "text-black"
-                }`}
-              >
-                {item.title}
-              </Text>
+            <View
+              className={`p-4 rounded-lg mb-2 shadow flex-row justify-between items-center ${
+                item.priority == "high"
+                  ? "bg-red-200"
+                  : item.priority == "low"
+                  ? "bg-white"
+                  : "bg-blue-200"
+              }`}
+            >
+              <View className="flex-row items-center">
+                <Text
+                  className={`font-semibold ${
+                    item.completed ? "text-gray-400 line-through" : "text-black"
+                  }`}
+                >
+                  {item.title}
+                </Text>
+                <Text className="font-light text-sm text-gray-700 ml-4">
+                  {item.dueDate}
+                </Text>
+              </View>
 
               <View className="flex-row items-center">
                 {item.completed ? (
-                  <FontAwesome name="hourglass" size={24} color="green" />
+                  <MaterialCommunityIcons
+                    name="sticker-check-outline"
+                    size={24}
+                    color="green"
+                  />
                 ) : (
                   <TouchableOpacity
                     onPress={() => {
@@ -145,7 +155,7 @@ export default function TasksScreen() {
                     <FontAwesome
                       name="hourglass-half"
                       size={24}
-                      color="black"
+                      color="green"
                     />
                   </TouchableOpacity>
                 )}
